@@ -1,0 +1,12 @@
+.root {
+  margin-top: 100px;
+}
+
+.form {
+  width: 300px;
+  margin: 0 auto;
+}
+
+.submit {
+  width: 100%;
+}

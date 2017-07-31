@@ -1,4 +1,4 @@
-import 'normalize.css'
+import 'antd/dist/antd.css'
 
 import { Meteor } from 'meteor/meteor'
 import React from 'react'
