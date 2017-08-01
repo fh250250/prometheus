@@ -3,8 +3,8 @@ import React, { Component } from 'react'
 import { createContainer } from 'meteor/react-meteor-data'
 import { Spin } from 'antd'
 
-import Login from './containers/Login.jsx'
-import Main from './containers/Main.jsx'
+import Login from './Layout/Login.jsx'
+import Main from './Layout/Main.jsx'
 
 function Loading (props) {
   return (
@@ -25,7 +25,7 @@ class App extends Component {
 
     if (loggingIn) { return <Loading /> }
 
-    return user ? <Main /> : <Login />
+    return user ? <Main username={ user.username } /> : <Login />
   }
 }
 

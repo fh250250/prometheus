@@ -1,0 +1,28 @@
+.logo {
+  color: white;
+  margin: 20px 0;
+}
+
+.user {
+  color: white;
+  margin-bottom: 50px;
+}
+
+.logout {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nav {
+  color: white;
+}
+.nav a {
+  color: inherit;
+  padding: 10px 0;
+  display: block;
+}
+.nav :global(.active) {
+  background-color: #108ee9;
+}
