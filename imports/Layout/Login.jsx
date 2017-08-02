@@ -11,7 +11,7 @@ class Login extends Component {
   }
 
   handleSubmit (ev) {
-    const { form, history } = this.props
+    const { form } = this.props
     ev.preventDefault()
 
     form.validateFields((err, values) => {

@@ -34,10 +34,10 @@ class ProxyComp extends Component {
         bordered
         style={{ backgroundColor: 'white' }}
       >
-        <Table.Column title="地址" dataIndex="addr" key="addr" />
-        <Table.Column title="使用次数" dataIndex="times" key="times" />
-        <Table.Column title="成功次数" dataIndex="success" key="success" />
-        <Table.Column title="失败次数" dataIndex="failure" key="failure" />
+        <Table.Column title="地址" dataIndex="addr" />
+        <Table.Column title="使用次数" dataIndex="times" />
+        <Table.Column title="成功次数" dataIndex="success" />
+        <Table.Column title="失败次数" dataIndex="failure" />
       </Table>
     )
   }
