@@ -3,6 +3,6 @@ import { crawl } from './index.js'
 
 Meteor.methods({
   'proxy.crawl'() {
-    crawl()
+    Meteor.defer(crawl)
   }
 })

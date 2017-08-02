@@ -3,7 +3,7 @@ import faker from 'faker'
 import _ from 'lodash'
 import { delay } from '/lib/utils'
 import crawlers from './crawlers.js'
-import { Proxy, Status } from '/lib/collections.js'
+import { Proxy, Jobs } from '/lib/collections.js'
 
 function ping (proxy) {
   return request({
@@ -17,7 +17,7 @@ function ping (proxy) {
 }
 
 async function processProxyList (proxyList) {
-  Status.update({ name: 'proxy' }, { $inc: { total: proxyList.length } })
+  Jobs.update({ name: 'proxy' }, { $inc: { 'progress.total': proxyList.length } })
 
   for (let i = 0; i < proxyList.length; i++) {
     const proxy = await ping(proxyList[i])
@@ -28,7 +28,7 @@ async function processProxyList (proxyList) {
       Proxy.insert(doc, _.noop)
     }
 
-    Status.update({ name: 'proxy' }, { $inc: { current: 1 } })
+    Jobs.update({ name: 'proxy' }, { $inc: { 'progress.current': 1 } })
   }
 }
 
@@ -41,15 +41,22 @@ async function crawlSite (crawler, total = 10) {
 }
 
 export function crawl () {
-  const status = Status.findOne({ name: 'proxy', busy: true })
+  const job = Jobs.findOne({ name: 'proxy' })
 
-  if (status) { return }
+  if (job.running) { return }
 
-  Status.update({ name: 'proxy' }, { $set: { busy: true, total: 0, current: 0 } })
+  Jobs.update({ name: 'proxy' }, {
+    $set: {
+      running: true,
+      progress: { current: 0, total: 0 }
+    }
+  })
 
   return Promise.all([
-    crawlSite(crawlers.xicidaili, 1),
-    crawlSite(crawlers.sixsixip, 1),
+    crawlSite(crawlers.xicidaili, 10),
+    crawlSite(crawlers.sixsixip, 10),
+    crawlSite(crawlers.nianshao, 10),
+    crawlSite(crawlers.httpsdaili, 10),
   ])
-  .then(() => Status.update({ name: 'proxy' }, { $set: { busy: false, total: 0, current: 0 } }))
+  .then(() => Jobs.update({ name: 'proxy' }, { $set: { running: false } }))
 }

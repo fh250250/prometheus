@@ -6,7 +6,8 @@ export function xicidaili (page = 1) {
   return request({
     uri: `http://www.xicidaili.com/wt/${page}`,
     headers: { 'user-agent': faker.internet.userAgent() },
-    transform: body => cheerio.load(body)
+    timeout: 10000,
+    transform: body => cheerio.load(body),
   })
   .then($ => {
     return $('#ip_list tr')
@@ -27,7 +28,8 @@ export function xicidaili (page = 1) {
 export function sixsixip (page = 1) {
   return request({
     uri: 'http://www.66ip.cn/mo.php?tqsl=50',
-    headers: { 'user-agent': faker.internet.userAgent() }
+    headers: { 'user-agent': faker.internet.userAgent() },
+    timeout: 10000,
   })
   .then(html => {
 
@@ -40,6 +42,52 @@ export function sixsixip (page = 1) {
 
       return `http://${d[0]}:${d[1]}`
     })
+  })
+  .catch(err => [])
+}
+
+export function httpsdaili (page = 1) {
+  return request({
+    uri: `http://www.httpsdaili.com/?stype=2&page=${page}`,
+    headers: { 'user-agent': faker.internet.userAgent() },
+    timeout: 10000,
+    transform: body => cheerio.load(body),
+  })
+  .then($ => {
+    return $('#list tbody tr')
+            .map((idx, ele) => {
+              const $tds = $(ele).find('td')
+
+              const protocol = $tds.eq(3).text().toLowerCase()
+              const host = $tds.eq(0).text()
+              const port = $tds.eq(1).text()
+
+              return `${protocol}://${host}:${port}`
+            })
+            .get()
+  })
+  .catch(err => [])
+}
+
+export function nianshao (page = 1) {
+  return request({
+    uri: `http://www.nianshao.me/?page=${page}`,
+    headers: { 'user-agent': faker.internet.userAgent() },
+    timeout: 10000,
+    transform: body => cheerio.load(body),
+  })
+  .then($ => {
+    return $('table tbody tr')
+            .map((idx, ele) => {
+              const $tds = $(ele).find('td')
+
+              const protocol = $tds.eq(4).text().toLowerCase()
+              const host = $tds.eq(0).text()
+              const port = $tds.eq(1).text()
+
+              return `${protocol}://${host}:${port}`
+            })
+            .get()
   })
   .catch(err => [])
 }

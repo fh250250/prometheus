@@ -3,7 +3,7 @@ import { createContainer } from 'meteor/react-meteor-data'
 import React, { Component } from 'react'
 import { Button, Table, Progress, message } from 'antd'
 
-import { Proxy, Status } from '/lib/collections.js'
+import { Proxy, Jobs } from '/lib/collections.js'
 
 import s from './index.css'
 
@@ -19,7 +19,9 @@ class ProxyComp extends Component {
   }
 
   renderTable () {
-    const data = this.props.list.map(p => ({
+    const { list, ready } = this.props
+
+    const data = list.map(p => ({
       ...p,
       key: p._id,
       failure: p.times - p.success
@@ -27,9 +29,9 @@ class ProxyComp extends Component {
 
     return (
       <Table
+        loading={!ready}
         dataSource={data}
         bordered
-        loading={!this.props.ready}
         style={{ backgroundColor: 'white' }}
       >
         <Table.Column title="地址" dataIndex="addr" key="addr" />
@@ -41,32 +43,34 @@ class ProxyComp extends Component {
   }
 
   renderProgress () {
-    const { ready, status } = this.props
+    const { ready, job } = this.props
 
-    if (ready && status.busy) {
-      const percent = status.total ? (status.current / status.total * 100) : 0
+    if (!ready) { return null }
 
-      return (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Progress
-            percent={Math.floor(percent)}
-            style={{ width: 200, marginRight: 10 }}
-          />
-          <span>{`[${status.current}/${status.total}]`}</span>
-        </div>
-      )
-    } else { return null }
+    const percent = job.progress.total
+      ? Math.floor(job.progress.current / job.progress.total * 100)
+      : 0
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Progress
+          percent={percent}
+          style={{ width: 200, marginRight: 10 }}
+        />
+        <span>{`[${job.progress.current}/${job.progress.total}]`}</span>
+      </div>
+    )
   }
 
   render () {
-    const { ready, status, list } = this.props
+    const { list, job, ready } = this.props
 
     return (
       <div>
         <div className={s.header}>
           <Button
-            loading={!ready || status.busy}
             type="primary"
+            loading={!ready || job.running}
             onClick={this.handleFetch}
           >
             抓取
@@ -85,11 +89,11 @@ class ProxyComp extends Component {
 
 export default createContainer(() => {
   const proxyHandle = Meteor.subscribe('proxy.list')
-  const statusHandle = Meteor.subscribe('status', 'proxy')
+  const jobHandle = Meteor.subscribe('jobs.proxy')
 
   return {
     list: Proxy.find({}).fetch(),
-    status: Status.findOne({ name: 'proxy' }),
-    ready: statusHandle.ready() && proxyHandle.ready()
+    job: Jobs.findOne({ name: 'proxy' }),
+    ready: proxyHandle.ready() && jobHandle.ready(),
   }
 }, ProxyComp)
