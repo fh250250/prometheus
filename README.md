@@ -1,6 +1,6 @@
 ## Setup
 
 ```bash
-$ npm i
-$ meteor
+$ meteor npm i
+$ meteor --settings settings.json
 ```
