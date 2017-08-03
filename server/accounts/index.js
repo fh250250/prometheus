@@ -1,7 +1,7 @@
 import { Meteor } from 'meteor/meteor'
 import request from 'request-promise'
 import faker from 'faker'
-import { Accounts } from '/lib/collections.js'
+import { Accounts, Jobs } from '/lib/collections.js'
 import { requestWithProxy } from '../proxy/index.js'
 import { delay } from '/lib/utils.js'
 
@@ -91,6 +91,7 @@ async function doRegister (ctx) {
       deviceid: ctx.deviceid,
       _: Date.now()
     },
+    timeout: 10000,
     json: true,
     resolveWithFullResponse: true
   }, ctx.proxy)
@@ -98,6 +99,7 @@ async function doRegister (ctx) {
   const json = res.body
 
   if (json.code) { throw new Error(json.reason) }
+  if (!json.userid) { throw new Error('接口未收到数据') }
 
   Accounts.insert({
     userid: json.userid,
@@ -121,12 +123,53 @@ async function registerOne () {
     deviceid: faker.random.alphaNumeric(15),
   }
 
+  console.log('\n------------------------------------------')
+
+  console.log('--> token')
   await getSMSToken(ctx)
+  console.log(`<-- token: ${ctx.token}`)
+
+  console.log('--> phone')
   await getPhoneNumber(ctx)
+  console.log(`<-- phone: ${ctx.phoneNumber}`)
+
+  console.log('--> send code')
   await sendCode(ctx)
+  console.log('<-- send code')
+
+  console.log('--> code')
   await pollCode(ctx)
+  console.log(`<-- code: ${ctx.code}`)
+
+  console.log('--> register')
   await doRegister(ctx)
+  console.log('<-- register')
 }
 
-export async function register(count) {
+export async function register(count = 10) {
+  const job = Jobs.findOne({ name: 'accounts.register' })
+
+  if (job.running) { return }
+
+  Jobs.update({ name: 'accounts.register' }, {
+    $set: {
+      running: true,
+      total: count,
+      success: 0,
+      failure: 0
+    }
+  })
+
+  for (let i = 0; i < count; i++) {
+    try {
+      await registerOne()
+
+      Jobs.update({ name: 'accounts.register' }, { $inc: { success: 1 } })
+    } catch (err) {
+      Jobs.update({ name: 'accounts.register' }, { $inc: { failure: 1 } })
+      console.log(err)
+    }
+  }
+
+  Jobs.update({ name: 'accounts.register' }, { $set: { running: false } })
 }

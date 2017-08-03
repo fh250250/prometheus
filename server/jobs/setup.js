@@ -7,3 +7,12 @@ Jobs.upsert({ name: 'proxy' }, {
     progress: { current: 0, total: 0 },
   }
 })
+
+Jobs.upsert({ name: 'accounts.register' }, {
+  $set: {
+    running: false,
+    total: 0,
+    success: 0,
+    failure: 0,
+  }
+})
