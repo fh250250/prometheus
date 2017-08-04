@@ -173,3 +173,14 @@ export async function register(count = 10) {
 
   Jobs.update({ name: 'accounts.register' }, { $set: { running: false } })
 }
+
+export function useAccountFor (type) {
+  const account = Accounts.findOne(
+    { for: type },
+    { sort: { times: 1 } }
+  )
+
+  Accounts.update({ _id: account._id }, { $inc: { times: 1 } })
+
+  return account
+}
