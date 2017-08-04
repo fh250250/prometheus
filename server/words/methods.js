@@ -9,5 +9,11 @@ Meteor.methods({
       content,
       date: new Date()
     })
+  },
+  'words.update'(_id, content) {
+    Words.update({ _id }, { $set: { content } })
+  },
+  'word.remove'(_id) {
+    Words.remove({ _id })
   }
 })
