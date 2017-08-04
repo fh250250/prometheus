@@ -11,6 +11,7 @@ class EditForm extends Component {
       confirmLoading: false
     }
     this.handleOk = this.handleOk.bind(this)
+    this.handleCancel = this.handleCancel.bind(this)
   }
 
   handleCancel () {
@@ -48,12 +49,12 @@ class EditForm extends Component {
         onCancel={this.handleCancel}
         confirmLoading={this.state.confirmLoading}
       >
-        <Form layout="inline">
+        <Form>
           <Form.Item>
             {form.getFieldDecorator('content', {
               rules: [{ required: true, message: '请填写内容' }]
             })(
-              <Input placeholder="内容" />
+              <Input.TextArea placeholder="内容" />
             )}
           </Form.Item>
         </Form>

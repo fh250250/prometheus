@@ -24,7 +24,7 @@ class ProxyComp extends Component {
     const data = list.map(p => ({
       ...p,
       key: p._id,
-      failure: p.times - p.success
+      rate: p.times === 0 ? 0 : Math.floor(p.success*100 / p.times) + '%'
     }))
 
     return (
@@ -37,7 +37,7 @@ class ProxyComp extends Component {
         <Table.Column title="地址" dataIndex="addr" />
         <Table.Column title="使用次数" dataIndex="times" />
         <Table.Column title="成功次数" dataIndex="success" />
-        <Table.Column title="失败次数" dataIndex="failure" />
+        <Table.Column title="成功率" dataIndex="rate" />
       </Table>
     )
   }

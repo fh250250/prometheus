@@ -1,11 +1,22 @@
 import { Meteor } from 'meteor/meteor'
 import { createContainer } from 'meteor/react-meteor-data'
 import React, { Component } from 'react'
-import { Table } from 'antd'
+import { Table, message } from 'antd'
+import EditableCell from './EditableCell.jsx'
 
 import { Accounts } from '/lib/collections.js'
 
 class Console extends Component {
+  onCellChange (id, value) {
+    Meteor.call('accounts.update', id, value, err => {
+      if (err) {
+        message.error('修改失败')
+      } else {
+        message.success('修改成功')
+      }
+    })
+  }
+
   render () {
     const { accounts, ready } = this.props
 
@@ -25,7 +36,12 @@ class Console extends Component {
         <Table.Column title="昵称" dataIndex="nickname" />
         <Table.Column title="密码" dataIndex="password" />
         <Table.Column title="使用次数" dataIndex="times" />
-        <Table.Column title="使用类型" dataIndex="for" />
+        <Table.Column title="使用类型" dataIndex="for" render={(text, record, index) => {
+          return (<EditableCell
+            value={text}
+            onChange={value => this.onCellChange(record._id, value)}
+          />)
+        }}/>
       </Table>
     )
   }

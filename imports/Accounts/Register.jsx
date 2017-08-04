@@ -1,7 +1,7 @@
 import { Meteor } from 'meteor/meteor'
 import React, { Component } from 'react'
 import { createContainer } from 'meteor/react-meteor-data'
-import { InputNumber, Form, Button, message } from 'antd'
+import { InputNumber, Form, Button, message, Progress, Row, Col, Spin } from 'antd'
 
 import { Jobs } from '/lib/collections.js'
 
@@ -56,15 +56,25 @@ class Register extends Component {
 
   renderStatus () {
     const { ready, job } = this.props
+    const disabled = !ready || job.running
 
     if (!ready) { return null }
 
+    let SuccessRate = job.total === 0 ? 0 : Math.floor(job.success * 100 / job.total)
+    let FailureRate = job.total === 0 ? 0 : Math.floor(job.failure * 100 / job.total)
+
     return (
-      <div>
-        Running: {job.running ? 'yes': 'no'} |
-        Total: {job.total} |
-        Success: {job.success} |
-        Failure: {job.failure}
+      <div style={{ width: 240 }}>
+        <Spin spinning={disabled}>
+          <Row type="flex">
+            <Col span={4}>成功：</Col>
+            <Col span={20}><Progress percent={SuccessRate} strokeWidth={5} /></Col> 
+          </Row>
+          <Row type="flex">
+            <Col span={4}>失败：</Col>
+            <Col span={20}><Progress percent={FailureRate} strokeWidth={5} /></Col> 
+          </Row>
+        </Spin>
       </div>
     )
   }

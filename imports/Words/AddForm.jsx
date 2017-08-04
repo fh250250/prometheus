@@ -10,7 +10,7 @@ class AddForm extends Component {
   }
 
   handleSubmit (ev) {
-    const { form, type } = this.props
+    const { form, type, id } = this.props
     ev.preventDefault()
 
     form.validateFields((err, values) => {
@@ -31,12 +31,12 @@ class AddForm extends Component {
     const { name, form } = this.props
 
     return (
-      <Form onSubmit={this.handleSubmit} layout="inline">
+      <Form onSubmit={this.handleSubmit}>
         <Form.Item>
           {form.getFieldDecorator('content', {
             rules: [{ required: true, message: '请填写内容' }]
           })(
-            <Input placeholder="内容" />
+            <Input.TextArea placeholder="内容" />
           )}
         </Form.Item>
 
