@@ -13,7 +13,7 @@ Meteor.methods({
   'words.update'(_id, content) {
     Words.update({ _id }, { $set: { content } })
   },
-  'word.remove'(_id) {
+  'words.remove'(_id) {
     Words.remove({ _id })
   }
 })

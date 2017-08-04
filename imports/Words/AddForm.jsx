@@ -10,20 +10,13 @@ class AddForm extends Component {
   }
 
   handleSubmit (ev) {
-    const { form, type, id } = this.props
+    const { form, type } = this.props
     ev.preventDefault()
 
     form.validateFields((err, values) => {
       if (err) { return }
 
-      id ? Meteor.call('words.update', id, values.content, err => {
-        if (err) {
-          message.error('修改失败')
-        } else {
-          message.success('修改成功')
-          form.resetFields()
-        }
-      }) : Meteor.call('words.insert', type, values.content, err => {
+      Meteor.call('words.insert', type, values.content, err => {
         if (err) {
           message.error('新增失败')
         } else {

@@ -2,45 +2,53 @@ import { Meteor } from 'meteor/meteor'
 import moment from 'moment'
 import { createContainer } from 'meteor/react-meteor-data'
 import React, { Component } from 'react'
-import { Table } from 'antd'
+import { Table, Row, Col, Modal, message } from 'antd'
 
 import AddForm from './AddForm.jsx'
+import EditForm from './EditForm.jsx'
 import { Words } from '/lib/collections.js'
 
-function WordsForm (props) {
-  return (
-    <Form onSubmit={this.handleSubmit} layout="inline">
-      <Form.Item>
-        {form.getFieldDecorator('content', {
-          rules: [{ required: true, message: '请填写内容' }]
-        })(
-          <Input placeholder="内容" />
-        )}
-      </Form.Item>
-    </Form>
-  )
-}
+const confirm = Modal.confirm
 
 class Console extends Component {
-  state = {
-    uVisible: false,
-    rVisible: false
+  constructor (props) {
+
+    super(props)
+
+    this.state = {
+      uVisible: false,
+      currentId: ''
+    }
+
+    this.closeEditModal = this.closeEditModal.bind(this)
   }
 
-  showUpdateModal () {
-    this.setState({ uVisible: true })
+  showUpdateModal (_id) {
+    this.setState({ uVisible: true, currentId: _id })
   }
 
-  showRemoveModal () {
-    this.setState({ rVisible: true })
-  }
-
-  handleUpdate (_id) {
-    
+  closeEditModal () {
+    this.setState({ uVisible: false })
   }
 
   handleRemove (_id) {
-
+    confirm({
+      title: '删除提示',
+      content: '确认删除该条话术吗',
+      onOk() {
+        return new Promise((resolve, reject) => {
+          Meteor.call('words.remove', _id, err => {
+            if (err) {
+              message.error('删除失败')
+              reject()
+            } else {
+              message.success('删除成功')
+              resolve()
+            }
+          })
+        })
+      }
+    });
   }
 
   renderTable () {
@@ -61,16 +69,10 @@ class Console extends Component {
         <Table.Column title={name} dataIndex="content" />
         <Table.Column title="时间" dataIndex="date" render={date => moment(date).fromNow()} />
         <Table.Column title="操作" dataIndex="_id" render={_id => (
-          <div>
-            <a onClick={this.showUpdateModal}>修改</a>
-            <Modal title="Basic Modal" visible={this.state.uVisible} onOk={() => this.handleUpdate(_id)} onCancel={this.handleUCancel}>
-              <AddForm type={type} name={name} id={_id}/>
-            </Modal>
-            <a onClick={this.showRemoveModal}>删除</a>
-            <Modal title="Basic Modal" visible={this.state.rVisible} onOk={() => this.handleRemove(_id)} onCancel={this.handleRCancel}>
-              <p>确认删除该条话术？</p>
-            </Modal>
-          </div>
+          <Row>
+            <Col span={12}><a onClick={() => this.showUpdateModal(_id)}>修改</a></Col>
+            <Col span={12}><a onClick={() => this.handleRemove(_id)}>删除</a></Col>
+          </Row>
         )}/> 
       </Table>
     )
@@ -78,11 +80,12 @@ class Console extends Component {
 
   render () {
     const { type, name } = this.props
-
+    const { uVisible, currentId } = this.state
     return (
       <div>
         <AddForm type={type} name={name} />
         {this.renderTable()}
+        <EditForm close={this.closeEditModal} visible={uVisible} id={currentId} />
       </div>
     )
   }
