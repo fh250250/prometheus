@@ -23,16 +23,22 @@ async function ping (proxy) {
 async function processProxyList (proxyList) {
   Jobs.update({ name: 'proxy' }, { $inc: { 'progress.total': proxyList.length } })
 
-  for (let i = 0; i < proxyList.length; i++) {
-    const proxy = await ping(proxyList[i])
+  const chunks = _.chunk(proxyList, 10)
 
-    if (proxy) {
-      const doc = { addr: proxy, times: 0, success: 0, date: new Date() }
+  for (let i = 0; i < chunks.length; i++) {
+    const list = await Promise.all(chunks[i].map(ping))
 
-      Proxy.insert(doc, _.noop)
+    for (let j = 0; j < list.length; j++) {
+      const proxy = list[j]
+
+      if (proxy) {
+        const doc = { addr: proxy, times: 0, success: 0, date: new Date() }
+
+        Proxy.insert(doc, _.noop)
+      }
+
+      Jobs.update({ name: 'proxy' }, { $inc: { 'progress.current': 1 } })
     }
-
-    Jobs.update({ name: 'proxy' }, { $inc: { 'progress.current': 1 } })
   }
 }
 
