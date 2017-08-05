@@ -4,7 +4,8 @@ import _ from 'lodash'
 import { requestWithProxy } from '../proxy/index.js'
 import { useAccountFor } from '../accounts/index.js'
 import { getWords } from '../words/index.js'
-import { Tasks, Accounts } from '/lib/collections.js'
+import { Tasks } from '/lib/collections.js'
+import { delay } from '/lib/utils.js'
 
 async function ensureRequestWithProxy (requestOpts) {
   let tryTimes = 0
@@ -140,8 +141,73 @@ async function commentArticle (userId, article) {
     words,
     target: targetLikeCount,
     like: 0,
-    completed: false
+    completed: false,
+    date: new Date()
   })
+}
+
+async function likeComment (commentId, account) {
+  const [json, _proxy] = await ensureRequestWithProxy({
+    uri: 'http://a1.go2yd.com/Website/interact/like-comment',
+    headers: {
+      'user-agent': faker.internet.userAgent,
+      'x-tingyun-processed': true,
+      cookie: account.cookie
+    },
+    qs: {
+      platform: 1,
+      appid: 'yidian',
+      cv: '4.0.1.0',
+      distribution: fakeDistribution(),
+      comment_id: commentId,
+      version: '020123',
+      net: 'wifi'
+    },
+    json: true,
+    timeout: 3000
+  })
+
+  if (json.code) { throw new Error(json.reason) }
+}
+
+async function doTask (taskId) {
+  let repeatTimes = 0
+
+  while (true) {
+    const task = Tasks.findOne({ _id: taskId })
+
+    if (task.like >= task.target) {
+      Tasks.update({ _id: task._id }, { $set: { completed: true } })
+      return
+    }
+
+    const account = useAccountFor('LIKE')
+
+    try {
+      await likeComment(task.comment_id, account)
+
+      Tasks.update({ _id: task._id }, { $inc: { like: 1 } })
+      repeatTimes = 0
+    } catch (err) {
+      console.log(err)
+
+      if (/找不到评论/.test(err.message)) {
+        Tasks.remove({ _id: task._id })
+        return
+      }
+
+      if (/重复提交/.test(err.message)) {
+        repeatTimes++
+
+        if (repeatTimes > 5) {
+          Tasks.update({ _id: task._id }, { $set: { completed: true } })
+          return
+        }
+      }
+    }
+
+    await delay(_.random(1, 4) * 1000)
+  }
 }
 
 export async function run (userId) {
@@ -155,4 +221,19 @@ export async function run (userId) {
   } catch (err) {
     console.log(err)
   }
+}
+
+export async function startLikeProcess (userId) {
+  console.log('start like')
+
+  while (true) {
+    const task = Tasks.findOne({ userId, completed: false })
+
+    if (!task) { break }
+
+    console.log('do Task:', task.title)
+    await doTask(task._id)
+  }
+
+  console.log('done')
 }
