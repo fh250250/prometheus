@@ -6,6 +6,8 @@ import { Table, Button, message } from 'antd'
 
 import { Tasks, Jobs } from '/lib/collections.js'
 
+import Channels from './Channels.jsx'
+
 class TasksComp extends Component {
   constructor (props) {
     super(props)
@@ -39,6 +41,7 @@ class TasksComp extends Component {
     return (
       <Button
         type="primary"
+        size="small"
         onClick={() => Meteor.call('tasks.complete', task._id, !task.completed)}
       >
         {task.completed ? '继续' : '完成'}
@@ -84,8 +87,9 @@ class TasksComp extends Component {
         rowKey="_id"
         dataSource={tasks}
         loading={!ready}
+        size="small"
         bordered
-        style={{ backgroundColor: 'white' }}
+        style={{ backgroundColor: 'white', margin: '20px 0' }}
         title={() => completed ? this.renderDetect() : this.renderStart()}
       >
         <Table.Column title="文章" key="article" render={(_, task) => {
@@ -106,8 +110,8 @@ class TasksComp extends Component {
   render () {
     return (
       <div>
+        <Channels />
         {this.renderTable(false)}
-        <div style={{ height: 20 }} />
         {this.renderTable(true)}
       </div>
     )

@@ -4,7 +4,7 @@ import _ from 'lodash'
 import { requestWithProxy } from '../proxy/index.js'
 import { useAccountFor } from '../accounts/index.js'
 import { getWords } from '../words/index.js'
-import { Tasks, Jobs } from '/lib/collections.js'
+import { Tasks, Jobs, Channels } from '/lib/collections.js'
 import { delay } from '/lib/utils.js'
 
 async function ensureRequestWithProxy (requestOpts) {
@@ -75,15 +75,7 @@ async function wrapFetchNewsByChannel (userId, channelId) {
 }
 
 async function fetchAllNews (userId) {
-  // TODO: 获取频道
-  const channels = [
-    { id: 'u11272', name: '搞笑GIF' },
-    { id: 't1121', name: '街拍' },
-    { id: 's10671', name: '搞笑' },
-    { id: 'u11392', name: '趣图' },
-    { id: 'u241', name: '美女' },
-    { id: 's11933', name: '内涵段子' },
-  ]
+  const channels = Channels.find({ userId }).fetch()
 
   const articles = _.flatten(await Promise.all(channels.map(c => wrapFetchNewsByChannel(userId, c.id))))
 
