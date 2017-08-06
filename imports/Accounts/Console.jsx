@@ -1,48 +1,72 @@
 import { Meteor } from 'meteor/meteor'
 import { createContainer } from 'meteor/react-meteor-data'
 import React, { Component } from 'react'
-import { Table, message } from 'antd'
-import EditableCell from './EditableCell.jsx'
+import { Table, message, Button } from 'antd'
 
 import { Accounts } from '/lib/collections.js'
 
 class Console extends Component {
-  onCellChange (id, value) {
-    Meteor.call('accounts.update', id, value, err => {
+  constructor (props) {
+    super(props)
+
+    this.renderFor = this.renderFor.bind(this)
+    this.handleExchange = this.handleExchange.bind(this)
+  }
+
+  handleExchange (account) {
+    const type = account.for === 'COMMENT' ? 'LIKE' : 'COMMENT'
+
+    Meteor.call('accounts.changeFor', account._id, type, err => {
       if (err) {
-        message.error('修改失败')
-      } else {
-        message.success('修改成功')
+        message.error('失败')
       }
     })
   }
 
-  render () {
-    const { accounts, ready } = this.props
+  renderFor (_, account) {
+    const forMap = {
+      COMMENT: '评论',
+      LIKE: '点赞'
+    }
 
-    const data = accounts.map(a => ({
-      ...a,
-      key: a._id
-    }))
+    return (
+      <div>
+        <span style={{ marginRight: 10 }}>{forMap[account.for]}</span>
+        <Button onClick={() => this.handleExchange(account)} size="small" type="ghost">转换</Button>
+      </div>
+    )
+  }
+
+  renderTable (accounts) {
+    const { ready } = this.props
 
     return (
       <Table
-        dataSource={data}
+        rowKey="_id"
+        dataSource={accounts}
         loading={!ready}
         bordered
-        style={{ backgroundColor: 'white' }}
+        size="small"
+        title={() => `个数: ${accounts.length}`}
+        style={{ backgroundColor: 'white', margin: '10px 0' }}
       >
         <Table.Column title="账号" dataIndex="username" />
         <Table.Column title="昵称" dataIndex="nickname" />
         <Table.Column title="密码" dataIndex="password" />
         <Table.Column title="使用次数" dataIndex="times" />
-        <Table.Column title="使用类型" dataIndex="for" render={(text, record, index) => {
-          return (<EditableCell
-            value={text}
-            onChange={value => this.onCellChange(record._id, value)}
-          />)
-        }}/>
+        <Table.Column title="使用类型" key="for" render={this.renderFor} />
       </Table>
+    )
+  }
+
+  render () {
+    const { accountsForComment, accountsForLike } = this.props
+
+    return (
+      <div>
+        {this.renderTable(accountsForComment)}
+        {this.renderTable(accountsForLike)}
+      </div>
     )
   }
 }
@@ -51,7 +75,8 @@ export default createContainer(({ type, name }) => {
   const accountsHandle = Meteor.subscribe('accounts')
 
   return {
-    accounts: Accounts.find({}).fetch(),
+    accountsForComment: Accounts.find({ for: 'COMMENT' }).fetch(),
+    accountsForLike: Accounts.find({ for: 'LIKE' }).fetch(),
     ready: accountsHandle.ready(),
   }
 }, Console)

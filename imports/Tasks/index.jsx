@@ -20,9 +20,7 @@ class TasksComp extends Component {
   handleStart () {
     Meteor.call('tasks.run', err => {
       if (err) {
-        message.error('失败')
-      } else {
-        message.success('成功')
+        message.error(err.reason)
       }
     })
   }
