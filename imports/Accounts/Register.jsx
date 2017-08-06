@@ -22,8 +22,6 @@ class Register extends Component {
       Meteor.call('accounts.register', values.count, err => {
         if (err) {
           message.error('注册失败')
-        } else {
-          message.success('成功')
         }
       })
     })
@@ -41,12 +39,12 @@ class Register extends Component {
             rules: [{ required: true, message: '请指定个数' }],
             initialValue: 10
           })(
-            <InputNumber min={1} max={100} disabled={disabled} />
+            <InputNumber size="small" min={1} max={100} disabled={disabled} />
           )}
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" disabled={disabled}>
+          <Button size="small" type="primary" htmlType="submit" disabled={disabled}>
             注册
           </Button>
         </Form.Item>
@@ -56,32 +54,24 @@ class Register extends Component {
 
   renderStatus () {
     const { ready, job } = this.props
-    const disabled = !ready || job.running
 
     if (!ready) { return null }
 
-    let SuccessRate = job.total === 0 ? 0 : Math.floor(job.success * 100 / job.total)
-    let FailureRate = job.total === 0 ? 0 : Math.floor(job.failure * 100 / job.total)
+    const percent = job.total ? Math.floor((job.success + job.failure) / job.total * 100) : 0
 
     return (
-      <div style={{ width: 240 }}>
-        <Spin spinning={disabled}>
-          <Row type="flex">
-            <Col span={4}>成功：</Col>
-            <Col span={20}><Progress percent={SuccessRate} strokeWidth={5} /></Col> 
-          </Row>
-          <Row type="flex">
-            <Col span={4}>失败：</Col>
-            <Col span={20}><Progress percent={FailureRate} strokeWidth={5} /></Col> 
-          </Row>
-        </Spin>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Progress style={{ width: 200 }} percent={percent}/>
+        <span style={{ marginRight: 20 }}>{`[${job.success + job.failure}/${job.total}]`}</span>
+        <span style={{ marginRight: 20 }}>成功: {job.success}</span>
+        <span>失败: {job.failure}</span>
       </div>
     )
   }
 
   render () {
     return (
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
         {this.renderForm()}
         {this.renderStatus()}
       </div>

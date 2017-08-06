@@ -16,3 +16,17 @@ Jobs.upsert({ name: 'accounts.register' }, {
     failure: 0,
   }
 })
+
+Meteor.users.find({}).forEach(user => {
+  Jobs.upsert({ userId: user._id, name: 'tasks' }, {
+    $set: {
+      running: false,
+    }
+  })
+
+  Jobs.upsert({ userId: user._id, name: 'tasks.detect' }, {
+    $set: {
+      running: false,
+    }
+  })
+})

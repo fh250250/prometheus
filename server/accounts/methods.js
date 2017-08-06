@@ -6,7 +6,7 @@ Meteor.methods({
   'accounts.register'(count) {
     Meteor.defer(() => register(count))
   },
-  'accounts.update'(_id, type) {
+  'accounts.changeFor'(_id, type) {
     Accounts.update({ _id }, { $set: { for: type } })
   }
 })

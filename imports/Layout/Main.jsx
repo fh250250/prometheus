@@ -3,7 +3,6 @@ import React, { Component } from 'react'
 import { Layout, Icon, Button } from 'antd'
 import { NavLink, BrowserRouter, Route, Redirect, Switch } from 'react-router-dom'
 
-import Dashboard from '/imports/Dashboard/index.jsx'
 import Words from '/imports/Words/index.jsx'
 import Accounts from '/imports/Accounts/index.jsx'
 import Tasks from '/imports/Tasks/index.jsx'
@@ -36,10 +35,9 @@ export default class Main extends Component {
             </h2>
 
             <ul className={ s.nav }>
-              <li><NavLink activeClassName="active" to="/dashboard">控制面板</NavLink></li>
+              <li><NavLink activeClassName="active" to="/tasks">任务</NavLink></li>
               <li><NavLink activeClassName="active" to="/words">话术</NavLink></li>
               <li><NavLink activeClassName="active" to="/accounts">账号</NavLink></li>
-              <li><NavLink activeClassName="active" to="/tasks">任务</NavLink></li>
               <li><NavLink activeClassName="active" to="/proxy">代理</NavLink></li>
             </ul>
 
@@ -48,12 +46,11 @@ export default class Main extends Component {
 
           <Layout.Content style={{ padding: '20px' }}>
             <Switch>
-              <Route path="/dashboard" component={ Dashboard } />
               <Route path="/words" component={ Words } />
               <Route path="/accounts" component={ Accounts } />
               <Route path="/tasks" component={ Tasks } />
               <Route path="/proxy" component={ Proxy } />
-              <Redirect to="/dashboard" />
+              <Redirect to="/tasks" />
             </Switch>
           </Layout.Content>
         </Layout>
