@@ -36,7 +36,7 @@ class AddForm extends Component {
           {form.getFieldDecorator('content', {
             rules: [{ required: true, message: '请填写内容' }]
           })(
-            <Input.TextArea placeholder="内容" />
+            <Input placeholder="内容" />
           )}
         </Form.Item>
 

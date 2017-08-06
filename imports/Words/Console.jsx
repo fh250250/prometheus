@@ -6,6 +6,7 @@ import { Table, Row, Col, Modal, message } from 'antd'
 
 import AddForm from './AddForm.jsx'
 import EditForm from './EditForm.jsx'
+import EditableCell from './EditableCell.jsx'
 import { Words } from '/lib/collections.js'
 
 const confirm = Modal.confirm
@@ -17,18 +18,19 @@ class Console extends Component {
 
     this.state = {
       uVisible: false,
-      currentId: ''
+      currentId: '',
+      currentWord: ''
     }
-
-    this.closeEditModal = this.closeEditModal.bind(this)
   }
 
-  showUpdateModal (_id) {
-    this.setState({ uVisible: true, currentId: _id })
-  }
-
-  closeEditModal () {
-    this.setState({ uVisible: false })
+  onCellChange = (id, value) => {
+    Meteor.call('words.update', id, value, err => {
+      if (err) {
+        message.error('修改失败')
+      } else {
+        message.success('修改成功')
+      }
+    })
   }
 
   handleRemove (_id) {
@@ -66,11 +68,15 @@ class Console extends Component {
         bordered
         style={{ backgroundColor: 'white' }}
       >
-        <Table.Column title={name} dataIndex="content" />
+        <Table.Column title={name} dataIndex="content" render={(text, record, index) => (
+          <EditableCell
+            value={text}
+            onChange={(value) => this.onCellChange(record._id, value)}
+          />
+        )} />
         <Table.Column title="时间" dataIndex="date" render={date => moment(date).fromNow()} />
-        <Table.Column title="操作" dataIndex="_id" render={_id => (
+        <Table.Column title="操作" dataIndex="_id" render={(_id, record) => (
           <Row>
-            <Col span={12}><a onClick={() => this.showUpdateModal(_id)}>修改</a></Col>
             <Col span={12}><a onClick={() => this.handleRemove(_id)}>删除</a></Col>
           </Row>
         )}/> 
@@ -80,12 +86,12 @@ class Console extends Component {
 
   render () {
     const { type, name } = this.props
-    const { uVisible, currentId } = this.state
+    const { uVisible, currentId, currentWord } = this.state
     return (
       <div>
         <AddForm type={type} name={name} />
         {this.renderTable()}
-        <EditForm close={this.closeEditModal} visible={uVisible} id={currentId} />
+        <EditForm close={this.closeEditModal} visible={uVisible} id={currentId} word={currentWord} />
       </div>
     )
   }

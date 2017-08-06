@@ -52,9 +52,10 @@ class EditForm extends Component {
         <Form>
           <Form.Item>
             {form.getFieldDecorator('content', {
-              rules: [{ required: true, message: '请填写内容' }]
+              rules: [{ required: true, message: '请填写内容' }],
+              valuePropName: 'value'
             })(
-              <Input.TextArea placeholder="内容" />
+              <Input placeholder="内容" name="content" />
             )}
           </Form.Item>
         </Form>

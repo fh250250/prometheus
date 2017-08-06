@@ -1,39 +1,42 @@
 import React, { Component } from 'react'
-import { Select, Icon } from 'antd'
-const { Option } = Select
+import { Input, Icon, Button } from 'antd';
 
-export default class EditableCell extends Component {
+export default class EditableCell extends React.Component {
   state = {
     value: this.props.value,
     editable: false,
   }
 
-  handleChange = (value) => {
-    this.setState({ value });
-  }
-
-  edit = () => {
-    this.setState({ editable: true });
+  handleChange = (e) => {
+    const value = e.target.value
+    this.setState({ value })
   }
 
   check = () => {
-    this.setState({ editable: false });
+    this.setState({ editable: false })
     if (this.props.onChange) {
-      this.props.onChange(this.state.value);
+      this.props.onChange(this.state.value)
     }
   }
 
+  edit = () => {
+    this.setState({ editable: true })
+  }
+
   render() {
-    const { value, editable } = this.state;
+    const { value, editable } = this.state
+
     return (
       <div className="editable-cell">
         {
           editable ?
             <div className="editable-cell-input-wrapper">
-              <Select defaultValue={value} onChange={this.handleChange}>
-                <Option value="COMMENT">COMMENT</Option>
-                <Option value="LIKE">LIKE</Option>
-              </Select>
+              <Input
+                value={value} 
+                onChange={this.handleChange}
+                onPressEnter={this.check}
+                style={{ width: '90%', marginRight: '10px' }}
+              />
               <Icon
                 type="check"
                 className="editable-cell-icon-check"
@@ -47,6 +50,7 @@ export default class EditableCell extends Component {
                 type="edit"
                 className="editable-cell-icon"
                 onClick={this.edit}
+                style={{ marginLeft: '10px' }}
               />
             </div>
         }
