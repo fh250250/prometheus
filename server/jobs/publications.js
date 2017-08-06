@@ -8,3 +8,7 @@ Meteor.publish('jobs.proxy', function () {
 Meteor.publish('jobs.register', function () {
   return Jobs.find({ name: 'accounts.register' })
 })
+
+Meteor.publish('jobs.tasks', function () {
+  return Jobs.find({ userId: this.userId })
+})

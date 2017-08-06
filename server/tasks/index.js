@@ -4,7 +4,7 @@ import _ from 'lodash'
 import { requestWithProxy } from '../proxy/index.js'
 import { useAccountFor } from '../accounts/index.js'
 import { getWords } from '../words/index.js'
-import { Tasks } from '/lib/collections.js'
+import { Tasks, Jobs } from '/lib/collections.js'
 import { delay } from '/lib/utils.js'
 
 async function ensureRequestWithProxy (requestOpts) {
@@ -29,7 +29,7 @@ function fakeDistribution () {
   ])
 }
 
-async function fetchNewsByChannel (channelId) {
+async function fetchNewsByChannel (userId, channelId) {
   const [json, _proxy] = await ensureRequestWithProxy({
     uri: 'http://www.yidianzixun.com/home/q/news_list_for_channel',
     headers: { 'user-agent': faker.internet.userAgent() },
@@ -52,7 +52,7 @@ async function fetchNewsByChannel (channelId) {
   for (let i = 0; i < json.result.length; i++) {
     const article = json.result[i]
 
-    if (!Tasks.findOne({ docid: article.docid })) {
+    if (!Tasks.findOne({ userId, docid: article.docid })) {
       articles.push(article)
     }
   }
@@ -64,6 +64,30 @@ async function fetchNewsByChannel (channelId) {
 
                    return now.diff(date, 'days') <= 2
                  })
+}
+
+async function wrapFetchNewsByChannel (userId, channelId) {
+  try {
+    return await fetchNewsByChannel(userId, channelId)
+  } catch (err) {
+    return []
+  }
+}
+
+async function fetchAllNews (userId) {
+  // TODO: 获取频道
+  const channels = [
+    { id: 'u11272', name: '搞笑GIF' },
+    { id: 't1121', name: '街拍' },
+    { id: 's10671', name: '搞笑' },
+    { id: 'u11392', name: '趣图' },
+    { id: 'u241', name: '美女' },
+    { id: 's11933', name: '内涵段子' },
+  ]
+
+  const articles = _.flatten(await Promise.all(channels.map(c => wrapFetchNewsByChannel(userId, c.id))))
+
+  return _.uniqBy(articles, 'docid')
 }
 
 async function calcLikeCount (docid) {
@@ -146,6 +170,17 @@ async function commentArticle (userId, article) {
   })
 }
 
+async function wrapCommentArticle (userId, article) {
+  try {
+    await commentArticle(userId, article)
+  } catch (err) {
+  }
+}
+
+async function commentAllArticles (userId, articles) {
+  await Promise.all(articles.map(article => wrapCommentArticle(userId, article)))
+}
+
 async function likeComment (commentId, account) {
   const [json, _proxy] = await ensureRequestWithProxy({
     uri: 'http://a1.go2yd.com/Website/interact/like-comment',
@@ -171,7 +206,7 @@ async function likeComment (commentId, account) {
 }
 
 async function doTask (taskId) {
-  let repeatTimes = 0
+  let errorTimes = 0
 
   while (true) {
     const task = Tasks.findOne({ _id: taskId })
@@ -187,19 +222,15 @@ async function doTask (taskId) {
       await likeComment(task.comment_id, account)
 
       Tasks.update({ _id: task._id }, { $inc: { like: 1 } })
-      repeatTimes = 0
+      errorTimes = 0
     } catch (err) {
-      console.log(err)
-
       if (/找不到评论/.test(err.message)) {
         Tasks.remove({ _id: task._id })
         return
-      }
+      } else {
+        errorTimes++
 
-      if (/重复提交/.test(err.message)) {
-        repeatTimes++
-
-        if (repeatTimes > 5) {
+        if (errorTimes > 5) {
           Tasks.update({ _id: task._id }, { $set: { completed: true } })
           return
         }
@@ -210,30 +241,65 @@ async function doTask (taskId) {
   }
 }
 
-export async function run (userId) {
-  try {
-    console.log('--> fetchNewsByChannel')
-    const articles = await fetchNewsByChannel('u11272')
-    console.log('<-- fetchNewsByChannel', articles[0])
+async function startLikeProcess (userId) {
+  while (true) {
+    const tasks = Tasks.find({ userId, completed: false }).fetch()
 
-    await commentArticle(userId, articles[0])
-    console.log('done')
-  } catch (err) {
-    console.log(err)
+    if (!tasks.length) { return }
+
+    await Promise.all(tasks.map(t => doTask(t._id)))
   }
 }
 
-export async function startLikeProcess (userId) {
-  console.log('start like')
+async function doDetect (taskId) {
+  const task = Tasks.findOne({ _id: taskId })
+  const account = useAccountFor('LIKE')
 
-  while (true) {
-    const task = Tasks.findOne({ userId, completed: false })
+  try {
+    await likeComment(task.comment_id, account)
 
-    if (!task) { break }
-
-    console.log('do Task:', task.title)
-    await doTask(task._id)
+    Tasks.update({ _id: task._id }, { $inc: { like: 1 } })
+  } catch (err) {
+    if (/找不到评论/.test(err.message)) {
+      Tasks.remove({ _id: task._id })
+    }
   }
+}
 
-  console.log('done')
+export async function run (userId) {
+  const job = Jobs.findOne({ userId, name: 'tasks' })
+
+  if (job.running) { return }
+
+  Jobs.update({ userId, name: 'tasks' }, {
+    $set: { running: true }
+  })
+
+  const articles = await fetchAllNews(userId)
+
+  await commentAllArticles(userId, articles)
+
+  await startLikeProcess(userId)
+
+  Jobs.update({ userId, name: 'tasks' }, {
+    $set: { running: false }
+  })
+}
+
+export async function detect (userId) {
+  const job = Jobs.findOne({ userId, name: 'tasks.detect' })
+
+  if (job.running) { return }
+
+  Jobs.update({ userId, name: 'tasks.detect' }, {
+    $set: { running: true }
+  })
+
+  const tasks = Tasks.find({ userId, date: { $gt: moment().subtract(2, 'days').toDate() } }).fetch()
+
+  await Promise.all(tasks.map(t => doDetect(t._id)))
+
+  Jobs.update({ userId, name: 'tasks.detect' }, {
+    $set: { running: false }
+  })
 }
