@@ -26,7 +26,7 @@ export default class Main extends Component {
 
     return (
       <BrowserRouter>
-        <Layout style={{ height: '100vh' }}>
+        <Layout>
           <Layout.Sider style={{ textAlign: 'center' }}>
             <h1 className={ s.logo }>Prometheus</h1>
             <h2 className={ s.user }>

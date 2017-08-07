@@ -162,15 +162,14 @@ async function commentArticle (userId, article) {
   })
 }
 
-async function wrapCommentArticle (userId, article) {
-  try {
-    await commentArticle(userId, article)
-  } catch (err) {
-  }
-}
-
 async function commentAllArticles (userId, articles) {
-  await Promise.all(articles.map(article => wrapCommentArticle(userId, article)))
+  for (let i = 0; i < articles.length; i++) {
+    try {
+      await commentArticle(userId, articles[i])
+    } catch (err) {
+      console.log(err)
+    }
+  }
 }
 
 async function likeComment (commentId, account) {
@@ -234,12 +233,16 @@ async function doTask (taskId) {
 }
 
 async function startLikeProcess (userId) {
-  while (true) {
-    const tasks = Tasks.find({ userId, completed: false }).fetch()
+  try {
+    while (true) {
+      const tasks = Tasks.find({ userId, completed: false }).fetch()
 
-    if (!tasks.length) { return }
+      if (!tasks.length) { return }
 
-    await Promise.all(tasks.map(t => doTask(t._id)))
+      await Promise.all(tasks.map(t => doTask(t._id)))
+    }
+  } catch (err) {
+    console.log(err)
   }
 }
 

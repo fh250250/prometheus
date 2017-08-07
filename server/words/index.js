@@ -2,12 +2,12 @@ import _ from 'lodash'
 import { Words } from '/lib/collections.js'
 
 export function getWords (userId) {
-  const main = Words.find({ userId, type: 'main' }).map(w => w.content)
-  const prefix = Words.find({ userId, type: 'prefix' }).map(w => w.content)
+  const main = _.sample(Words.find({ userId, type: 'main' }).map(w => w.content))
+  const prefix = _.sample(Words.find({ userId, type: 'prefix' }).map(w => w.content))
 
   if (!prefix) {
-    return _.sample(main)
+    return main
   } else {
-    return `${_.sample(prefix)}，${_.sample(main)}`
+    return `${prefix}，${main}`
   }
 }

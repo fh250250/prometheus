@@ -1,0 +1,22 @@
+{
+  "apps": [
+    {
+      "name": "prometheus",
+      "cwd": "/home/ubuntu/prometheus/bundle",
+      "script": "main.js",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": "8000",
+        "ROOT_URL": "http://119.29.149.64:8000",
+        "MONGO_URL": "mongodb://localhost:27017/prometheus",
+        "METEOR_SETTINGS": {
+          "sms": {
+            "key": "api-ygnzq99b",
+            "password": "qq1234567.",
+            "sid": "44694"
+          }
+        }
+      }
+    }
+  ]
+}
