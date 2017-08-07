@@ -36,7 +36,9 @@ async function fetchNewsByChannel (userId, channelId) {
     qs: {
       channel_id: channelId,
       cstart: 0,
-      cend: 30,
+      cend: 20,
+      infinite: true,
+      refresh: 1,
       __from__: 'pc',
       multi: 5,
       appid: 'web_yidian',
