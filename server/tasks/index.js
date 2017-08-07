@@ -202,6 +202,8 @@ async function doTask (taskId) {
   while (true) {
     const task = Tasks.findOne({ _id: taskId })
 
+    if (!task) { return }
+
     if (task.like >= task.target) {
       Tasks.update({ _id: task._id }, { $set: { completed: true } })
       return
