@@ -79,7 +79,7 @@ class Console extends Component {
           <Row>
             <Col span={12}><a onClick={() => this.handleRemove(_id)}>删除</a></Col>
           </Row>
-        )}/> 
+        )}/>
       </Table>
     )
   }

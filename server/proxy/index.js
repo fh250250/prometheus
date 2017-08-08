@@ -63,9 +63,9 @@ export async function crawl () {
   })
 
   await Promise.all([
-    crawlSite(crawlers.xicidaili, 10),
-    crawlSite(crawlers.sixsixip, 10),
-    crawlSite(crawlers.nianshao, 10),
+    crawlSite(crawlers.xicidaili, 20),
+    crawlSite(crawlers.sixsixip, 20),
+    crawlSite(crawlers.nianshao, 50),
     crawlSite(crawlers.httpsdaili, 10),
   ])
 

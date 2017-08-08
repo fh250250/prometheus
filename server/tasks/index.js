@@ -4,7 +4,7 @@ import _ from 'lodash'
 import { requestWithProxy } from '../proxy/index.js'
 import { useAccountFor } from '../accounts/index.js'
 import { getWords } from '../words/index.js'
-import { Tasks, Jobs, Channels, KV } from '/lib/collections.js'
+import { Tasks, Jobs, Channels } from '/lib/collections.js'
 import { delay } from '/lib/utils.js'
 
 async function ensureRequestWithProxy (requestOpts) {
@@ -29,19 +29,14 @@ function fakeDistribution () {
   ])
 }
 
-async function fetchNewsByChannel (userId, channelId) {
-  const cookieKV = KV.findOne({ key: 'cookie' })
-  let cookie = ''
-
-  if (cookieKV) { cookie = cookieKV.value }
-
+async function fetchNewsByChannel (userId, channelId, count) {
   const [json, _proxy] = await ensureRequestWithProxy({
     uri: 'http://www.yidianzixun.com/home/q/news_list_for_channel',
-    headers: { 'user-agent': faker.internet.userAgent(), cookie },
+    headers: { 'user-agent': faker.internet.userAgent() },
     qs: {
       channel_id: channelId,
       cstart: 0,
-      cend: 20,
+      cend: count || 10,
       infinite: true,
       refresh: 1,
       __from__: 'pc',
@@ -73,45 +68,21 @@ async function fetchNewsByChannel (userId, channelId) {
                  })
 }
 
-async function wrapFetchNewsByChannel (userId, channelId) {
+async function wrapFetchNewsByChannel (userId, channelId, count) {
   try {
-    return await fetchNewsByChannel(userId, channelId)
+    return await fetchNewsByChannel(userId, channelId, count)
   } catch (err) {
     console.error(err)
     return []
   }
 }
 
-async function fetchAllNews (userId) {
+async function fetchAllNews (userId, count) {
   const channels = Channels.find({ userId }).fetch()
 
-  await fetchQueryCookie()
-
-  const articles = _.flatten(await Promise.all(channels.map(c => wrapFetchNewsByChannel(userId, c.id))))
+  const articles = _.flatten(await Promise.all(channels.map(c => wrapFetchNewsByChannel(userId, c.id, count))))
 
   return _.uniqBy(articles, 'docid')
-}
-
-async function fetchQueryCookie () {
-  try {
-    const cookieKV = KV.findOne({ key: 'cookie' })
-    let cookie = ''
-
-    if (cookieKV) { cookie = cookieKV.value }
-
-    const [res, _proxy] = await ensureRequestWithProxy({
-      uri: 'http://www.yidianzixun.com',
-      headers: { 'user-agent': faker.internet.userAgent(), cookie },
-      timeout: 5000,
-      resolveWithFullResponse: true
-    })
-
-    if (res.headers['set-cookie']) {
-      KV.upsert({ key: 'cookie' }, { $set: { value: res.headers['set-cookie'].join(';') } })
-    }
-  } catch (err) {
-    console.error(err)
-  }
 }
 
 async function calcLikeCount (docid) {
@@ -235,6 +206,7 @@ async function doTask (taskId) {
     const task = Tasks.findOne({ _id: taskId })
 
     if (!task) { return }
+    if (task.completed) { return }
 
     if (task.like >= task.target) {
       Tasks.update({ _id: task._id }, { $set: { completed: true } })
@@ -295,7 +267,7 @@ async function doDetect (taskId) {
   }
 }
 
-export async function run (userId) {
+export async function run (userId, count) {
   const job = Jobs.findOne({ userId, name: 'tasks' })
 
   if (job.running) { return }
@@ -304,7 +276,7 @@ export async function run (userId) {
     $set: { running: true }
   })
 
-  const articles = await fetchAllNews(userId)
+  const articles = await fetchAllNews(userId, count)
 
   await commentAllArticles(userId, articles)
 

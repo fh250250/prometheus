@@ -2,27 +2,64 @@ import { Meteor } from 'meteor/meteor'
 import { createContainer } from 'meteor/react-meteor-data'
 import React, { Component } from 'react'
 import moment from 'moment'
-import { Table, Button, message } from 'antd'
+import { Table, Button, message, Form, InputNumber } from 'antd'
 
 import { Tasks, Jobs } from '/lib/collections.js'
 
 import Channels from './Channels.jsx'
 
+const StartForm = Form.create()(class extends Component {
+  constructor (props) {
+    super(props)
+
+    this.handleSubmit = this.handleSubmit.bind(this)
+  }
+
+  handleSubmit (ev) {
+    const { form } = this.props
+    ev.preventDefault()
+
+    form.validateFields((err, values) =>  {
+      if (err) { return }
+
+      Meteor.call('tasks.run', values.count, err => {
+        if (err) {
+          message.error(err.reason)
+        }
+      })
+    })
+  }
+
+  render () {
+    const { form, loading } = this.props
+
+    return (
+      <Form onSubmit={this.handleSubmit} layout="inline">
+        <Form.Item label="个数">
+          {form.getFieldDecorator('count', {
+            rules: [{ required: true, message: '请指定个数' }],
+            initialValue: 10
+          })(
+            <InputNumber size="small" min={1} max={50} disabled={loading} />
+          )}
+        </Form.Item>
+
+        <Form.Item>
+          <Button size="small" type="primary" htmlType="submit" disabled={loading}>
+            开始
+          </Button>
+        </Form.Item>
+      </Form>
+    )
+  }
+})
+
 class TasksComp extends Component {
   constructor (props) {
     super(props)
 
-    this.handleStart = this.handleStart.bind(this)
     this.handleDetect = this.handleDetect.bind(this)
     this.renderAction = this.renderAction.bind(this)
-  }
-
-  handleStart () {
-    Meteor.call('tasks.run', err => {
-      if (err) {
-        message.error(err.reason)
-      }
-    })
   }
 
   handleDetect () {
@@ -51,12 +88,9 @@ class TasksComp extends Component {
     const { ready, tasksJob } = this.props
 
     return (
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
         <span style={{ fontSize: 20, marginRight: 20 }}>未完成任务</span>
-        <Button
-          type="primary"
-          onClick={this.handleStart}
-          loading={!ready || tasksJob.running}>开始</Button>
+        <StartForm loading={!ready || tasksJob.running} />
       </div>
     )
   }
