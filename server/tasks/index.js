@@ -4,7 +4,7 @@ import _ from 'lodash'
 import { requestWithProxy } from '../proxy/index.js'
 import { useAccountFor } from '../accounts/index.js'
 import { getWords } from '../words/index.js'
-import { Tasks, Jobs, Channels } from '/lib/collections.js'
+import { Tasks, Jobs, Channels, KV } from '/lib/collections.js'
 import { delay } from '/lib/utils.js'
 
 async function ensureRequestWithProxy (requestOpts) {
@@ -30,9 +30,14 @@ function fakeDistribution () {
 }
 
 async function fetchNewsByChannel (userId, channelId) {
+  const cookieKV = KV.findOne({ key: 'cookie' })
+  let cookie = ''
+
+  if (cookieKV) { cookie = cookieKV.value }
+
   const [json, _proxy] = await ensureRequestWithProxy({
     uri: 'http://www.yidianzixun.com/home/q/news_list_for_channel',
-    headers: { 'user-agent': faker.internet.userAgent() },
+    headers: { 'user-agent': faker.internet.userAgent(), cookie },
     qs: {
       channel_id: channelId,
       cstart: 0,
@@ -72,6 +77,7 @@ async function wrapFetchNewsByChannel (userId, channelId) {
   try {
     return await fetchNewsByChannel(userId, channelId)
   } catch (err) {
+    console.error(err)
     return []
   }
 }
@@ -79,9 +85,33 @@ async function wrapFetchNewsByChannel (userId, channelId) {
 async function fetchAllNews (userId) {
   const channels = Channels.find({ userId }).fetch()
 
+  await fetchQueryCookie()
+
   const articles = _.flatten(await Promise.all(channels.map(c => wrapFetchNewsByChannel(userId, c.id))))
 
   return _.uniqBy(articles, 'docid')
+}
+
+async function fetchQueryCookie () {
+  try {
+    const cookieKV = KV.findOne({ key: 'cookie' })
+    let cookie = ''
+
+    if (cookieKV) { cookie = cookieKV.value }
+
+    const [res, _proxy] = await ensureRequestWithProxy({
+      uri: 'http://www.yidianzixun.com',
+      headers: { 'user-agent': faker.internet.userAgent(), cookie },
+      timeout: 5000,
+      resolveWithFullResponse: true
+    })
+
+    if (res.headers['set-cookie']) {
+      KV.upsert({ key: 'cookie' }, { $set: { value: res.headers['set-cookie'].join(';') } })
+    }
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 async function calcLikeCount (docid) {
@@ -169,7 +199,7 @@ async function commentAllArticles (userId, articles) {
     try {
       await commentArticle(userId, articles[i])
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 }
@@ -246,7 +276,7 @@ async function startLikeProcess (userId) {
       await Promise.all(tasks.map(t => doTask(t._id)))
     }
   } catch (err) {
-    console.log(err)
+    console.error(err)
   }
 }
 
