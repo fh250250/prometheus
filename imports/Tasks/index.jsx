@@ -156,8 +156,8 @@ export default createContainer(() => {
 
   return {
     ready: tasksHandle.ready() && jobHandle.ready(),
-    completedTasks: Tasks.find({ completed: true }).fetch(),
-    unCompletedTasks: Tasks.find({ completed: false }).fetch(),
+    completedTasks: Tasks.find({ completed: true }, { sort: { date: -1 } }).fetch(),
+    unCompletedTasks: Tasks.find({ completed: false }, { sort: { date: -1 } }).fetch(),
     tasksJob: Jobs.findOne({ name: 'tasks' }),
     detectJob: Jobs.findOne({ name: 'tasks.detect' }),
   }

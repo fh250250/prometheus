@@ -92,7 +92,7 @@ export default createContainer(() => {
   const jobHandle = Meteor.subscribe('jobs.proxy')
 
   return {
-    list: Proxy.find({}).fetch(),
+    list: Proxy.find({}, { sort: { times: -1 } }).fetch(),
     job: Jobs.findOne({ name: 'proxy' }),
     ready: proxyHandle.ready() && jobHandle.ready(),
   }

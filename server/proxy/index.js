@@ -6,6 +6,8 @@ import crawlers from './crawlers.js'
 import { Proxy, Jobs } from '/lib/collections.js'
 
 async function ping (proxy) {
+  let ret = null
+
   try {
     await request({
       uri: 'http://www.baidu.com',
@@ -14,10 +16,12 @@ async function ping (proxy) {
       headers: { 'user-agent': faker.internet.userAgent() }
     })
 
-    return proxy
-  } catch (err) {
-    return null
-  }
+    ret = proxy
+  } catch (err) {}
+
+  Jobs.update({ name: 'proxy' }, { $inc: { 'progress.current': 1 } })
+
+  return ret
 }
 
 async function processProxyList (proxyList) {
@@ -36,8 +40,6 @@ async function processProxyList (proxyList) {
 
         Proxy.insert(doc, _.noop)
       }
-
-      Jobs.update({ name: 'proxy' }, { $inc: { 'progress.current': 1 } })
     }
   }
 }
@@ -62,36 +64,39 @@ export async function crawl () {
     }
   })
 
-  await Promise.all([
-    crawlSite(crawlers.xicidaili, 20),
-    crawlSite(crawlers.sixsixip, 20),
-    crawlSite(crawlers.nianshao, 50),
-    crawlSite(crawlers.httpsdaili, 10),
-  ])
+  try {
+    await Promise.all([
+      crawlSite(crawlers.xicidaili, 20),
+      crawlSite(crawlers.sixsixip, 20),
+      crawlSite(crawlers.nianshao, 50),
+      crawlSite(crawlers.httpsdaili, 10),
+    ])
+  } catch (err) {
+    console.error(err)
+  }
 
   Jobs.update({ name: 'proxy' }, { $set: { running: false } })
 }
 
 export async function requestWithProxy (requestOpts, thisProxy) {
-  const proxy = thisProxy || Proxy.findOne({}, { sort: { times: 1 } })
+  const proxyCount = Proxy.find({}).count()
 
-  if (!proxy) {
-    Meteor.defer(crawl)
-    throw new Error('no proxy')
-  }
+  if (proxyCount < 200) { Meteor.defer(crawl) }
 
-  // 增加此代理使用次数
-  Proxy.update({ _id: proxy._id }, { $inc: { times: 1 } })
-  proxy.times++
+  const proxy = thisProxy || Proxy.findOne({}, { sort: { date: 1 } })
+
+  if (!proxy) { throw new Error('no proxy') }
+
+  // 增加此代理使用次数，更新时间
+  Proxy.update({ _id: proxy._id }, { $inc: { times: 1 }, $currentDate: { date: true } })
 
   try {
     const requestValue = await request({ ...requestOpts, proxy: proxy.addr })
 
     // 增加成功次数
     Proxy.update({ _id: proxy._id }, { $inc: { success: 1 } })
-    proxy.success++
 
-    return [requestValue, proxy]
+    return [requestValue, Proxy.findOne({ _id: proxy._id })]
   } catch (err) {
     if (proxy.times > 10 && (proxy.success / proxy.times) < 0.7) {
       // 成功率小于 70%
