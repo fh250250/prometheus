@@ -4,9 +4,9 @@ import { Tasks, Words } from '/lib/collections.js'
 
 Meteor.methods({
   'tasks.run'(count) {
-    const mainWords = Words.findOne({ userId: this.userId, type: 'main' })
+    const words = Words.findOne({ userId: this.userId })
 
-    if (!mainWords) {
+    if (!words || !words.content) {
       throw new Meteor.Error('no-words', '未设置话术')
     }
 

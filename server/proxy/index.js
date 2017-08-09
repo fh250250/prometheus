@@ -98,7 +98,7 @@ export async function requestWithProxy (requestOpts, thisProxy) {
 
     return [requestValue, Proxy.findOne({ _id: proxy._id })]
   } catch (err) {
-    if (proxy.times > 10 && (proxy.success / proxy.times) < 0.7) {
+    if (proxy.times > 10 && (proxy.success / proxy.times) < 0.6) {
       // 成功率小于 70%
       Proxy.remove({ _id: proxy._id })
     }
