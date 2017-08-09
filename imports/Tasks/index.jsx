@@ -40,12 +40,12 @@ const StartForm = Form.create()(class extends Component {
             rules: [{ required: true, message: '请指定个数' }],
             initialValue: 10
           })(
-            <InputNumber size="small" min={1} max={50} disabled={loading} />
+            <InputNumber min={1} max={50} disabled={loading} />
           )}
         </Form.Item>
 
         <Form.Item>
-          <Button size="small" type="primary" htmlType="submit" disabled={loading}>
+          <Button type="primary" htmlType="submit" loading={loading}>
             开始
           </Button>
         </Form.Item>
@@ -89,7 +89,7 @@ class TasksComp extends Component {
 
     return (
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontSize: 20, marginRight: 20 }}>未完成任务</span>
+        <span style={{ fontSize: 20, marginRight: 20 }}>进行中</span>
         <StartForm loading={!ready || tasksJob.running} />
       </div>
     )
@@ -100,7 +100,7 @@ class TasksComp extends Component {
 
     return (
       <div>
-        <span style={{ fontSize: 20, marginRight: 20 }}>已完成任务</span>
+        <span style={{ fontSize: 20, marginRight: 20 }}>已完成</span>
         <Button
           type="primary"
           onClick={this.handleDetect}

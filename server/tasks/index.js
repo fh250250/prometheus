@@ -1,6 +1,7 @@
 import faker from 'faker'
 import moment from 'moment'
 import _ from 'lodash'
+import unescapeJS from '/lib/unescape.js'
 import { requestWithProxy } from '../proxy/index.js'
 import { useAccountFor } from '../accounts/index.js'
 import { getWords } from '../words/index.js'
@@ -29,12 +30,33 @@ function fakeDistribution () {
   ])
 }
 
+async function fetchChannelPage (channelId) {
+  try {
+    const [res, _proxy] = await ensureRequestWithProxy({
+      uri: `http://www.yidianzixun.com/channel/${channelId}`,
+      headers: { 'user-agent': faker.internet.userAgent() },
+      resolveWithFullResponse: true,
+      timeout: 5000
+    })
+
+    const cookie = res.headers['set-cookie'].join(';')
+    const str = res.body.match(/window.yidian.docinfo = (.*)/)[1]
+    const docinfo = JSON.parse(unescapeJS(str))
+
+    return [cookie, _.get(docinfo, 'current_channel.channel_id', channelId)]
+  } catch (err) {
+    return ['', channelId]
+  }
+}
+
 async function fetchNewsByChannel (userId, channelId, count) {
+  const [cookie, newChannelId] = await fetchChannelPage(channelId)
+
   const [json, _proxy] = await ensureRequestWithProxy({
     uri: 'http://www.yidianzixun.com/home/q/news_list_for_channel',
-    headers: { 'user-agent': faker.internet.userAgent() },
+    headers: { 'user-agent': faker.internet.userAgent(), cookie },
     qs: {
-      channel_id: channelId,
+      channel_id: newChannelId,
       cstart: 0,
       cend: count || 10,
       infinite: true,

@@ -75,8 +75,8 @@ export default createContainer(({ type, name }) => {
   const accountsHandle = Meteor.subscribe('accounts')
 
   return {
-    accountsForComment: Accounts.find({ for: 'COMMENT' }).fetch(),
-    accountsForLike: Accounts.find({ for: 'LIKE' }).fetch(),
+    accountsForComment: Accounts.find({ for: 'COMMENT' }, { sort: { times: -1 } }).fetch(),
+    accountsForLike: Accounts.find({ for: 'LIKE' }, { sort: { times: -1 } }).fetch(),
     ready: accountsHandle.ready(),
   }
 }, Console)

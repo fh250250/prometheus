@@ -40,7 +40,7 @@ class WordsComp extends Component {
           {form.getFieldDecorator('content', {
             initialValue: content
           })(
-            <Input.TextArea rows={20} disabled={!ready} />
+            <Input.TextArea style={{ fontSize: 16 }} rows={30} disabled={!ready} />
           )}
         </Form.Item>
 
