@@ -84,23 +84,23 @@ class TasksComp extends Component {
     )
   }
 
-  renderStart () {
+  renderStart (count) {
     const { ready, tasksJob } = this.props
 
     return (
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontSize: 20, marginRight: 20 }}>进行中</span>
+        <span style={{ fontSize: 20, marginRight: 20 }}>进行中: {count}</span>
         <StartForm loading={!ready || tasksJob.running} />
       </div>
     )
   }
 
-  renderDetect () {
+  renderDetect (count) {
     const { ready, detectJob } = this.props
 
     return (
       <div>
-        <span style={{ fontSize: 20, marginRight: 20 }}>已完成</span>
+        <span style={{ fontSize: 20, marginRight: 20 }}>已完成: {count}</span>
         <Button
           type="primary"
           onClick={this.handleDetect}
@@ -122,7 +122,7 @@ class TasksComp extends Component {
         size="small"
         bordered
         style={{ backgroundColor: 'white', margin: '20px 0' }}
-        title={() => completed ? this.renderDetect() : this.renderStart()}
+        title={() => completed ? this.renderDetect(tasks.length) : this.renderStart(tasks.length)}
       >
         <Table.Column title="文章" key="article" render={(_, task) => {
           const url = `http://www.yidianzixun.com/article/${task.docid}`
