@@ -177,10 +177,10 @@ export async function register(count = 10) {
 export function useAccountFor (type) {
   const account = Accounts.findOne(
     { for: type },
-    { sort: { times: 1 } }
+    { sort: { date: 1 } }
   )
 
-  Accounts.update({ _id: account._id }, { $inc: { times: 1 } })
+  Accounts.update({ _id: account._id }, { $inc: { times: 1 }, $currentDate: { date: true } })
 
   return account
 }
