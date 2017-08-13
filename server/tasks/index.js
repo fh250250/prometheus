@@ -8,13 +8,16 @@ import { getWords } from '../words/index.js'
 import { Tasks, Jobs, Channels } from '/lib/collections.js'
 import { delay } from '/lib/utils.js'
 
-async function ensureRequestWithProxy (requestOpts) {
+async function ensureRequestWithProxy (requestOpts, thisProxy = null) {
   let tryTimes = 0
+  let proxy = thisProxy
 
   while (true) {
     try {
-      return await requestWithProxy(requestOpts)
+      return await requestWithProxy(requestOpts, proxy)
     } catch (err) {
+      proxy = null
+
       if (tryTimes++ > 100) { throw err }
     }
   }
@@ -183,6 +186,7 @@ async function commentArticle (userId, article) {
     target: targetLikeCount,
     like: 0,
     completed: false,
+    errorTimes: 0,
     date: new Date()
   })
 }
@@ -197,8 +201,8 @@ async function commentAllArticles (userId, articles) {
   }
 }
 
-async function likeComment (commentId, account) {
-  const [json, _proxy] = await ensureRequestWithProxy({
+function getLikeOpts (commentId, account) {
+  return {
     uri: 'http://a1.go2yd.com/Website/interact/like-comment',
     headers: {
       'user-agent': faker.internet.userAgent,
@@ -216,47 +220,42 @@ async function likeComment (commentId, account) {
     },
     json: true,
     timeout: 3000
-  })
-
-  if (json.code) { throw new Error(json.reason) }
+  }
 }
 
-async function doTask (taskId) {
-  let errorTimes = 0
+async function likeOnce (tasks) {
+  const account = useAccountFor('LIKE')
+  let proxy = null
 
-  while (true) {
-    const task = Tasks.findOne({ _id: taskId })
+  for (let i = 0; i < tasks.length; i++) {
+    const task = Tasks.findOne({ _id: tasks[i]._id })
 
-    if (!task) { return }
-    if (task.completed) { return }
+    if (!task) { continue }
+    if (task.completed) { continue }
 
-    if (task.like >= task.target) {
-      Tasks.update({ _id: task._id }, { $set: { completed: true } })
-      return
+    if (task.like >= task.target || task.errorTimes >= 5) {
+      Tasks.update({ _id: task._id }, { $set: { completed: true, errorTimes: 0 } })
+      continue
     }
 
-    const account = useAccountFor('LIKE')
-
     try {
-      await likeComment(task.comment_id, account)
+      const [json, newProxy] = await ensureRequestWithProxy(getLikeOpts(task.comment_id, account), proxy)
 
-      Tasks.update({ _id: task._id }, { $inc: { like: 1 } })
-      errorTimes = 0
+      proxy = newProxy
+
+      if (json.code) { throw new Error(json.reason) }
+
+      Tasks.update({ _id: task._id }, { $inc: { like: 1 }, $set: { errorTimes: 0 } })
     } catch (err) {
       if (/找不到评论/.test(err.message)) {
         Tasks.remove({ _id: task._id })
-        return
       } else {
-        errorTimes++
-
-        if (errorTimes > 5) {
-          Tasks.update({ _id: task._id }, { $set: { completed: true } })
-          return
-        }
+        Tasks.update({ _id: task._id }, { $inc: { errorTimes: 1 } })
+        return
       }
     }
 
-    await delay(_.random(1, 4) * 1000)
+    await delay(_.random(2, 4) * 100)
   }
 }
 
@@ -267,7 +266,7 @@ async function startLikeProcess (userId) {
 
       if (!tasks.length) { return }
 
-      await Promise.all(tasks.map(t => doTask(t._id)))
+      await likeOnce(tasks)
     }
   } catch (err) {
     console.error(err)
@@ -279,7 +278,9 @@ async function doDetect (taskId) {
   const account = useAccountFor('LIKE')
 
   try {
-    await likeComment(task.comment_id, account)
+    const [json, _proxy] = await ensureRequestWithProxy(getLikeOpts(task.comment_id, account))
+
+    if (json.code) { throw new Error(json.reason) }
 
     Tasks.update({ _id: task._id }, { $inc: { like: 1 } })
   } catch (err) {
@@ -318,9 +319,11 @@ export async function detect (userId) {
     $set: { running: true }
   })
 
-  const tasks = Tasks.find({ userId, date: { $gt: moment().subtract(2, 'days').toDate() } }).fetch()
+  const tasks = Tasks.find({ userId, completed: true, date: { $gt: moment().subtract(2, 'days').toDate() } }).fetch()
 
-  await Promise.all(tasks.map(t => doDetect(t._id)))
+  for (let i = 0; i < tasks.length; i++) {
+    await doDetect(tasks[i]._id)
+  }
 
   Jobs.update({ userId, name: 'tasks.detect' }, {
     $set: { running: false }
