@@ -7,7 +7,7 @@ import { delay } from '/lib/utils.js'
 
 function requestSMS (action, args) {
   return request({
-    uri: 'http://api.hellotrue.com/api/do.php',
+    uri: 'http://api.xingjk.cn/api/do.php',
     timeout: 10000,
     qs: { ...args, action },
     transform: body => body.trim().split('|').map(f => f.trim())
