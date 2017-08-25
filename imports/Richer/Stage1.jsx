@@ -88,7 +88,7 @@ const BindForm = createContainer(() => {
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" disabled={disabled}>
+          <Button type="primary" htmlType="submit" loading={disabled}>
             绑定
           </Button>
         </Form.Item>

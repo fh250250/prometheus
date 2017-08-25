@@ -1,6 +1,6 @@
 import faker from 'faker'
 import { Jobs, Accounts } from '/lib/collections.js'
-import { delay, fakeDistribution } from '/lib/utils.js'
+import { fakeDistribution } from '/lib/utils.js'
 import { ensureRequestWithProxy } from '../proxy/index.js'
 
 async function bindEx (account, code) {
