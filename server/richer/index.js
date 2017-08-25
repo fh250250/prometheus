@@ -23,6 +23,7 @@ async function bindEx (account, code) {
   })
 
   if (json.code === undefined) { throw new Error('接口没收到数据') }
+  if (json.code) { console.log(json.reason) }
 
   Accounts.update({ _id: account._id }, {
     $set: {
@@ -51,6 +52,7 @@ async function doCheckIn(account) {
   })
 
   if (json.code === undefined) { throw new Error('接口没收到数据') }
+  if (json.code) { console.log(json.reason) }
 
   Accounts.update({ _id: account._id }, { $set: { checked: true } })
 }
