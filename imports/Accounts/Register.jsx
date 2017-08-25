@@ -13,13 +13,13 @@ class Register extends Component {
   }
 
   handleSubmit (ev) {
-    const { form } = this.props
+    const { form, forType, extra } = this.props
     ev.preventDefault()
 
     form.validateFields((err, values) =>  {
       if (err) { return }
 
-      Meteor.call('accounts.register', values.count, err => {
+      Meteor.call('accounts.register', values.count, forType, extra, err => {
         if (err) {
           message.error('注册失败')
         }
@@ -81,10 +81,11 @@ class Register extends Component {
 
 const WrapRegister = Form.create()(Register)
 
-export default createContainer(() => {
+export default createContainer(props => {
   const jobHandle = Meteor.subscribe('jobs.register')
 
   return {
+    ...props,
     job: Jobs.findOne({ name: 'accounts.register' }),
     ready: jobHandle.ready(),
   }

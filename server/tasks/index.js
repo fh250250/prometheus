@@ -2,36 +2,11 @@ import faker from 'faker'
 import moment from 'moment'
 import _ from 'lodash'
 import unescapeJS from '/lib/unescape.js'
-import { requestWithProxy } from '../proxy/index.js'
+import { ensureRequestWithProxy } from '../proxy/index.js'
 import { useAccountFor } from '../accounts/index.js'
 import { getWords } from '../words/index.js'
 import { Tasks, Jobs, Channels } from '/lib/collections.js'
-import { delay } from '/lib/utils.js'
-
-async function ensureRequestWithProxy (requestOpts, thisProxy = null) {
-  let tryTimes = 0
-  let proxy = thisProxy
-
-  while (true) {
-    try {
-      return await requestWithProxy(requestOpts, proxy)
-    } catch (err) {
-      proxy = null
-
-      if (tryTimes++ > 100) { throw err }
-    }
-  }
-}
-
-function fakeDistribution () {
-  return _.sample([
-    'www.meizu.com',
-    'www.mi.com',
-    'www.vivo.com',
-    'www.huawei.com',
-    'www.samsung.com'
-  ])
-}
+import { delay, fakeDistribution } from '/lib/utils.js'
 
 async function fetchChannelPage (channelId) {
   try {

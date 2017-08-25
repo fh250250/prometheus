@@ -7,6 +7,7 @@ import Words from '/imports/Words/index.jsx'
 import Accounts from '/imports/Accounts/index.jsx'
 import Tasks from '/imports/Tasks/index.jsx'
 import Proxy from '/imports/Proxy/index.jsx'
+import Richer from '/imports/Richer/index.jsx'
 
 import s from './Main.css'
 
@@ -39,6 +40,7 @@ export default class Main extends Component {
               <li><NavLink activeClassName="active" to="/words">话术</NavLink></li>
               <li><NavLink activeClassName="active" to="/accounts">账号</NavLink></li>
               <li><NavLink activeClassName="active" to="/proxy">代理</NavLink></li>
+              <li><NavLink activeClassName="active" to="/richer">大富翁活动</NavLink></li>
             </ul>
 
             <Button type="danger" className={ s.logout } onClick={ this.handleLogout }>退出</Button>
@@ -50,6 +52,7 @@ export default class Main extends Component {
               <Route path="/accounts" component={ Accounts } />
               <Route path="/tasks" component={ Tasks } />
               <Route path="/proxy" component={ Proxy } />
+              <Route path="/richer" component={ Richer } />
               <Redirect to="/tasks" />
             </Switch>
           </Layout.Content>

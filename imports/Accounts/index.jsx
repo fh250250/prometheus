@@ -6,7 +6,7 @@ export default class Accounts extends Component {
   render () {
     return (
       <div>
-        <Register />
+        <Register forType="COMMENT" extra={{}} />
         <Console />
       </div>
     )

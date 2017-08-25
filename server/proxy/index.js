@@ -106,3 +106,18 @@ export async function requestWithProxy (requestOpts, thisProxy) {
     throw err
   }
 }
+
+export async function ensureRequestWithProxy (requestOpts, thisProxy = null) {
+  let tryTimes = 0
+  let proxy = thisProxy
+
+  while (true) {
+    try {
+      return await requestWithProxy(requestOpts, proxy)
+    } catch (err) {
+      proxy = null
+
+      if (tryTimes++ > 100) { throw err }
+    }
+  }
+}

@@ -2,7 +2,7 @@ import { Meteor } from 'meteor/meteor'
 import request from 'request-promise'
 import faker from 'faker'
 import { Accounts, Jobs } from '/lib/collections.js'
-import { requestWithProxy } from '../proxy/index.js'
+import { requestWithProxy, ensureRequestWithProxy } from '../proxy/index.js'
 import { delay } from '/lib/utils.js'
 
 function requestSMS (action, args) {
@@ -102,6 +102,7 @@ async function doRegister (ctx) {
   if (!json.userid) { throw new Error('接口未收到数据') }
 
   Accounts.insert({
+    ...ctx.extra,
     userid: json.userid,
     username: json.username,
     nickname: json.nickname,
@@ -109,18 +110,20 @@ async function doRegister (ctx) {
     webCookie: res.headers['set-cookie'].join(';'),
     password,
     times: 0,
-    for: 'COMMENT',
+    for: ctx.forType,
     date: new Date(),
   })
 }
 
-async function registerOne () {
+async function registerOne (forType, extra) {
   const ctx = {
     token: null,
     phoneNumber: null,
     code: null,
     proxy: null,
     deviceid: faker.random.alphaNumeric(15),
+    forType,
+    extra,
   }
 
   console.log('\n------------------------------------------')
@@ -146,7 +149,7 @@ async function registerOne () {
   console.log('<-- register')
 }
 
-export async function register(count = 10) {
+export async function register(count = 10, forType = 'COMMENT', extra = {}) {
   const job = Jobs.findOne({ name: 'accounts.register' })
 
   if (job.running) { return }
@@ -162,7 +165,7 @@ export async function register(count = 10) {
 
   for (let i = 0; i < count; i++) {
     try {
-      await registerOne()
+      await registerOne(forType, extra)
 
       Jobs.update({ name: 'accounts.register' }, { $inc: { success: 1 } })
     } catch (err) {
