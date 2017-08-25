@@ -29,6 +29,12 @@ Jobs.upsert({ name: 'richer.checkin' }, {
   }
 })
 
+Jobs.upsert({ name: 'richer.detect' }, {
+  $set: {
+    running: false,
+  }
+})
+
 Meteor.users.find({}).forEach(user => {
   Jobs.upsert({ userId: user._id, name: 'tasks' }, {
     $set: {

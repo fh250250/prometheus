@@ -57,6 +57,36 @@ async function doCheckIn(account) {
   Accounts.update({ _id: account._id }, { $set: { checked: true } })
 }
 
+async function miscInfo(account) {
+  const [json, _proxy] = await ensureRequestWithProxy({
+    uri: 'http://a1.go2yd.com/Website/invite/misc-info',
+    headers: {
+      'user-agent': faker.internet.userAgent(),
+      cookie: account.cookie
+    },
+    qs: {
+      appid: 'yidian',
+      version: '020126',
+      platform: 1,
+      cv: '4.3.0.2',
+      distribution: fakeDistribution()
+    },
+    json: true,
+    timeout: 5000
+  })
+
+  if (json.code === undefined) { throw new Error('接口没收到数据') }
+  if (json.code) { throw new Error(json.reason) }
+
+  if (!json.hasmaster) {
+    Accounts.update({ _id: account._id }, { $set: { new: true, checked: false } })
+  }
+
+  if (account.checked && !json.checkin_today) {
+    Accounts.update({ _id: account._id }, { $set: { checked: false } })
+  }
+}
+
 export async function bind(count, code) {
   const job = Jobs.findOne({ name: 'richer.bind' })
 
@@ -107,4 +137,26 @@ export async function checkin() {
   }
 
   Jobs.update({ name: 'richer.checkin' }, { $set: { running: false } })
+}
+
+export async function detect() {
+  const job = Jobs.findOne({ name: 'richer.detect' })
+
+  if (job.running) { return }
+
+  Jobs.update({ name: 'richer.detect' }, { $set: { running: true } })
+
+  const accounts = Accounts.find({ for: 'RICHER', new: false }).fetch()
+
+  for (let i = 0; i < accounts.length; i++) {
+    try {
+      await miscInfo(accounts[i])
+    } catch (err) {
+      console.error(err.message)
+    }
+
+    await delay(1000)
+  }
+
+  Jobs.update({ name: 'richer.detect' }, { $set: { running: false } })
 }

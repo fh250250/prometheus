@@ -17,6 +17,10 @@ Meteor.publish('jobs.richer.checkin', function () {
   return Jobs.find({ name: 'richer.checkin' })
 })
 
+Meteor.publish('jobs.richer.detect', function () {
+  return Jobs.find({ name: 'richer.detect' })
+})
+
 Meteor.publish('jobs.tasks', function () {
   return Jobs.find({ userId: this.userId })
 })

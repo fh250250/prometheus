@@ -36,17 +36,20 @@ const AccountsTable = createContainer(() => {
 })
 
 export default createContainer(() => {
-  const jobHandle = Meteor.subscribe('jobs.richer.checkin')
+  const checkInJobHandle = Meteor.subscribe('jobs.richer.checkin')
+  const detectJobHandle = Meteor.subscribe('jobs.richer.detect')
 
   return {
-    ready: jobHandle.ready(),
-    job: Jobs.findOne({ name: 'richer.checkin' })
+    ready: checkInJobHandle.ready() && detectJobHandle.ready(),
+    checkInJob: Jobs.findOne({ name: 'richer.checkin' }),
+    detectJob: Jobs.findOne({ name: 'richer.detect' }),
   }
 }, class Stage2 extends Component {
   constructor (props) {
     super(props)
 
     this.handleStart = this.handleStart.bind(this)
+    this.handleDetect = this.handleDetect.bind(this)
   }
 
   handleStart () {
@@ -57,13 +60,36 @@ export default createContainer(() => {
     })
   }
 
+  handleDetect () {
+    Meteor.call('richer.detect', err => {
+      if (err) {
+        message.error('失败')
+      }
+    })
+  }
+
   render () {
-    const { ready, job } = this.props
-    const disabled = !ready || job.running
+    const { ready, checkInJob, detectJob } = this.props
 
     return (
       <div>
-        <Button type="primary" onClick={this.handleStart} loading={disabled}>开始</Button>
+        <Button
+          type="primary"
+          onClick={this.handleStart}
+          loading={!ready || checkInJob.running}
+          style={{ marginRight: 20 }}
+        >
+          开始
+        </Button>
+
+        <Button
+          type="primary"
+          onClick={this.handleDetect}
+          loading={!ready || detectJob.running}
+        >
+          检测
+        </Button>
+
         <AccountsTable />
       </div>
     )

@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor'
-import { bind, checkin } from './index.js'
+import { bind, checkin, detect } from './index.js'
 import { Accounts } from '/lib/collections.js'
 
 Meteor.methods({
@@ -14,5 +14,8 @@ Meteor.methods({
   },
   'richer.checkin'() {
     Meteor.defer(checkin)
+  },
+  'richer.detect'() {
+    Meteor.defer(detect)
   }
 })
