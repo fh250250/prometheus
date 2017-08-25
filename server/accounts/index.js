@@ -170,7 +170,7 @@ export async function register(count = 10, forType = 'COMMENT', extra = {}) {
       Jobs.update({ name: 'accounts.register' }, { $inc: { success: 1 } })
     } catch (err) {
       Jobs.update({ name: 'accounts.register' }, { $inc: { failure: 1 } })
-      console.log(err)
+      console.log(err.message)
     }
   }
 

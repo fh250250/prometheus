@@ -1,6 +1,6 @@
 import faker from 'faker'
 import { Jobs, Accounts } from '/lib/collections.js'
-import { fakeDistribution } from '/lib/utils.js'
+import { fakeDistribution, delay } from '/lib/utils.js'
 import { ensureRequestWithProxy } from '../proxy/index.js'
 
 async function bindEx (account, code) {
@@ -72,8 +72,10 @@ export async function bind(count, code) {
     try {
       await bindEx(accounts[i], code)
     } catch (err) {
-      console.error(err)
+      console.error(err.message)
     }
+
+    await delay(1000)
   }
 
   Jobs.update({ name: 'richer.bind' }, { $set: { running: false } })
@@ -96,8 +98,10 @@ export async function checkin() {
     try {
       await doCheckIn(accounts[i])
     } catch (err) {
-      console.error(err)
+      console.error(err.message)
     }
+
+    await delay(1000)
   }
 
   Jobs.update({ name: 'richer.checkin' }, { $set: { running: false } })
