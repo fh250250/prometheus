@@ -58,8 +58,8 @@ async function doCheckIn(account) {
   Accounts.update({ _id: account._id }, { $set: { checked: true } })
 }
 
-async function wrapDoCheckIn(account) {
-  await delay(_.random(1, 10) * 100)
+async function wrapDoCheckIn(account, idx) {
+  await delay((idx + 1) * 200)
 
   try {
     await doCheckIn(account)
@@ -100,8 +100,8 @@ async function miscInfo(account) {
   }
 }
 
-async function wrapMiscInfo(account) {
-  await delay(_.random(1, 10) * 100)
+async function wrapMiscInfo(account, idx) {
+  await delay((idx + 1) * 200)
 
   try {
     await miscInfo(account)
