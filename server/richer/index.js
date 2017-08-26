@@ -1,4 +1,5 @@
 import faker from 'faker'
+import _ from 'lodash'
 import { Jobs, Accounts } from '/lib/collections.js'
 import { fakeDistribution, delay } from '/lib/utils.js'
 import { ensureRequestWithProxy } from '../proxy/index.js'
@@ -57,6 +58,18 @@ async function doCheckIn(account) {
   Accounts.update({ _id: account._id }, { $set: { checked: true } })
 }
 
+async function wrapDoCheckIn(account) {
+  await delay(_.random(1, 10) * 100)
+
+  try {
+    await doCheckIn(account)
+  } catch (err) {
+    console.error(err.message)
+  }
+
+  Jobs.update({ name: 'richer.checkin' }, { $inc: { count: 1 } })
+}
+
 async function miscInfo(account) {
   const [json, _proxy] = await ensureRequestWithProxy({
     uri: 'http://a1.go2yd.com/Website/invite/misc-info',
@@ -87,6 +100,19 @@ async function miscInfo(account) {
   }
 }
 
+async function wrapMiscInfo(account) {
+  await delay(_.random(1, 10) * 100)
+
+  try {
+    await miscInfo(account)
+  } catch (err) {
+    console.error(err.message)
+  }
+
+  Accounts.update({ _id: account._id }, { $set: { detected: true } })
+  Jobs.update({ name: 'richer.detect' }, { $inc: { count: 1 } })
+}
+
 export async function bind(count, code) {
   const job = Jobs.findOne({ name: 'richer.bind' })
 
@@ -106,8 +132,6 @@ export async function bind(count, code) {
     } catch (err) {
       console.error(err.message)
     }
-
-    await delay(1000)
   }
 
   Jobs.update({ name: 'richer.bind' }, { $set: { running: false } })
@@ -121,19 +145,21 @@ export async function checkin() {
   Jobs.update({ name: 'richer.checkin' }, {
     $set: {
       running: true,
+      count: 0,
+      total: Accounts.find({ for: 'RICHER', new: false, checked: false }).count()
     }
   })
 
-  const accounts = Accounts.find({ for: 'RICHER', new: false, checked: false }).fetch()
+  while (true) {
+    const accounts = Accounts.find({ for: 'RICHER', new: false, checked: false }, { limit: 10 }).fetch()
 
-  for (let i = 0; i < accounts.length; i++) {
+    if (!accounts.length) { break }
+
     try {
-      await doCheckIn(accounts[i])
+      await Promise.all(accounts.map(wrapDoCheckIn))
     } catch (err) {
       console.error(err.message)
     }
-
-    await delay(1000)
   }
 
   Jobs.update({ name: 'richer.checkin' }, { $set: { running: false } })
@@ -144,18 +170,27 @@ export async function detect() {
 
   if (job.running) { return }
 
-  Jobs.update({ name: 'richer.detect' }, { $set: { running: true } })
+  // 都标记为 未探测 状态
+  Accounts.update({ for: 'RICHER', new: false }, { $set: { detected: false } }, { multi: true })
 
-  const accounts = Accounts.find({ for: 'RICHER', new: false }).fetch()
+  Jobs.update({ name: 'richer.detect' }, {
+    $set: {
+      running: true,
+      count: 0,
+      total: Accounts.find({ for: 'RICHER', detected: false }).count()
+    }
+  })
 
-  for (let i = 0; i < accounts.length; i++) {
+  while (true) {
+    const accounts = Accounts.find({ for: 'RICHER', detected: false }, { limit: 10 }).fetch()
+
+    if (!accounts.length) { break }
+
     try {
-      await miscInfo(accounts[i])
+      await Promise.all(accounts.map(wrapMiscInfo))
     } catch (err) {
       console.error(err.message)
     }
-
-    await delay(1000)
   }
 
   Jobs.update({ name: 'richer.detect' }, { $set: { running: false } })

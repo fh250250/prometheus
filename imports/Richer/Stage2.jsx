@@ -70,24 +70,29 @@ export default createContainer(() => {
 
   render () {
     const { ready, checkInJob, detectJob } = this.props
+    const detectLoading = !ready || detectJob.running
+    const checkInLoading = !ready || checkInJob.running
+
+    const detectStatus = ready && detectJob.running ? `${detectJob.count}/${detectJob.total}` : ''
+    const checkInStatus = ready && checkInJob.running ? `${checkInJob.count}/${checkInJob.total}` : ''
 
     return (
       <div>
         <Button
           type="primary"
           onClick={this.handleStart}
-          loading={!ready || checkInJob.running}
+          loading={checkInLoading}
           style={{ marginRight: 20 }}
         >
-          开始
+          {`开始 ${checkInStatus}`}
         </Button>
 
         <Button
           type="primary"
           onClick={this.handleDetect}
-          loading={!ready || detectJob.running}
+          loading={detectLoading}
         >
-          检测
+          {`检测 ${detectStatus}`}
         </Button>
 
         <AccountsTable />

@@ -26,12 +26,16 @@ Jobs.upsert({ name: 'richer.bind' }, {
 Jobs.upsert({ name: 'richer.checkin' }, {
   $set: {
     running: false,
+    count: 0,
+    total: 0,
   }
 })
 
 Jobs.upsert({ name: 'richer.detect' }, {
   $set: {
     running: false,
+    count: 0,
+    total: 0,
   }
 })
 
