@@ -105,11 +105,11 @@ async function wrapMiscInfo(account, idx) {
 
   try {
     await miscInfo(account)
+    Accounts.update({ _id: account._id }, { $set: { detected: true } })
   } catch (err) {
     console.error(err.message)
   }
 
-  Accounts.update({ _id: account._id }, { $set: { detected: true } })
   Jobs.update({ name: 'richer.detect' }, { $inc: { count: 1 } })
 }
 
