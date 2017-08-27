@@ -53,7 +53,13 @@ async function doCheckIn(account) {
   })
 
   if (json.code === undefined) { throw new Error('接口没收到数据') }
-  if (json.code) { console.log(json.reason) }
+  if (json.code) {
+    console.log(json.reason)
+
+    if (/封禁/.test(json.reason)) {
+      Accounts.update({ _id: account._id }, { $set: { for: 'BANED' } })
+    }
+  }
 
   Accounts.update({ _id: account._id }, { $set: { checked: true } })
 }
@@ -65,10 +71,6 @@ async function wrapDoCheckIn(account, idx) {
     await doCheckIn(account)
   } catch (err) {
     console.error(err.message)
-
-    if (/封禁/.test(err.message)) {
-      Accounts.update({ _id: account._id }, { $set: { for: 'BANED' } })
-    }
   }
 
   Jobs.update({ name: 'richer.checkin' }, { $inc: { count: 1 } })
