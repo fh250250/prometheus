@@ -65,6 +65,10 @@ async function wrapDoCheckIn(account, idx) {
     await doCheckIn(account)
   } catch (err) {
     console.error(err.message)
+
+    if (/封禁/.test(err.message)) {
+      Accounts.update({ _id: account._id }, { $set: { for: 'BANED' } })
+    }
   }
 
   Jobs.update({ name: 'richer.checkin' }, { $inc: { count: 1 } })
